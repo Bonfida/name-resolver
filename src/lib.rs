@@ -82,6 +82,10 @@ async fn get_name_url(sns_name: &str) -> String {
     println!("NAME acc key {:?}", name_account_key);
     let url_name_record_key = find_name_key(&URL_RECORD_NAME_HASHED, &name_account_key);
     println!("URL acc key {:?}", url_name_record_key);
+    println!(
+        "URL base58  {:?}",
+        bs58::encode(url_name_record_key).into_string()
+    );
 
     let request_data = format!(
         "
@@ -90,13 +94,13 @@ async fn get_name_url(sns_name: &str) -> String {
         \"id\": 1,
         \"method\": \"getAccountInfo\",
         \"params\": [
-          \"{:?}\",
+          \"{}\",
           {{
             \"encoding\": \"base64\"
           }}
         ]
       }}",
-        url_name_record_key
+        bs58::encode(url_name_record_key).into_string()
     );
 
     let request_json: Value = serde_json::from_str(&request_data).unwrap();
@@ -118,6 +122,8 @@ async fn get_name_url(sns_name: &str) -> String {
 
     let a = res.text().await.unwrap();
     let json_return: Value = serde_json::from_str(&a).unwrap();
+
+    println!("{:?}", json_return);
 
     let url_str = &json_return["result"]["value"]["data"][0].as_str().unwrap()
         [NAME_RECORD_HEADER_LEN..]
