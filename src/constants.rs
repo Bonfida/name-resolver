@@ -17,3 +17,13 @@ pub const SPL_NAME_SERVICE_ID: [u8; 32] = [
 pub const ERROR_URL: &str = "https://sol-domain.org";
 
 pub const HOME_MSG: &str = "Visit https://bonfida.org";
+
+pub const RECORDS_LOWER_CASE: [&str; 13] = [
+    "ipfs", "arwv", "eth", "btc", "ltc", "doge", "email", "url", "discord", "github", "reddit",
+    "twitter", "telegram",
+];
+
+pub const RECORDS: [&str; 13] = [
+    "IPFS", "ARWV", "ETH", "BTC", "LTC", "DOGE", "email", "url", "discord", "github", "reddit",
+    "twitter", "telegram",
+];

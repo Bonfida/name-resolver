@@ -26,18 +26,19 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     router
         .get("/", |_, _| Response::ok(constants::HOME_MSG))
         .get_async("/:sns_name", |_, ctx| async move {
+            let error_response = Response::redirect(Url::parse(constants::ERROR_URL).unwrap());
             match ctx.param("sns_name") {
                 Some(sns_name) => {
                     let url = get_name_url(sns_name).await;
-                    let response = if let Ok(url) = url {
+
+                    if let Ok(url) = url {
                         Response::redirect(url)
                     } else {
-                        Response::redirect(Url::parse(constants::ERROR_URL).unwrap())
-                    };
-                    return response;
+                        error_response
+                    }
                 }
-                None => return Response::redirect(Url::parse(constants::ERROR_URL).unwrap()),
-            };
+                None => error_response,
+            }
         })
         .run(req, env)
         .await

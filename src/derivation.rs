@@ -6,23 +6,48 @@ use {
     worker::Url,
 };
 
+use futures::join;
+
 use crate::constants::{
-    HASH_PREFIX, MAINNET_URL, NAME_RECORD_HEADER_LEN, ROOT_DOMAIN_ACCOUNT, SPL_NAME_SERVICE_ID,
+    HASH_PREFIX, MAINNET_URL, NAME_RECORD_HEADER_LEN, RECORDS, RECORDS_LOWER_CASE,
+    ROOT_DOMAIN_ACCOUNT, SPL_NAME_SERVICE_ID,
 };
 
 /// Fetch and deseriealize the URL value stored in the SNS domain names data
 pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
-    let splitted: Vec<&str> = sns_name.split('.').collect();
+    let mut splitted_names: Vec<&str> = sns_name.split('.').collect();
+    let mut first_name = splitted_names[0].to_owned();
+    first_name.make_ascii_lowercase();
+    // If a record was specified, get its correct name and strip it from the input
+    let record = RECORDS_LOWER_CASE
+        .iter()
+        .position(|rec| rec == &first_name)
+        .map(|idx| {
+            splitted_names.remove(0);
+            RECORDS[idx]
+        });
 
-    let record_key = if splitted.len() == 2 {
-        let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
-        find_name_key(&format!("\0{}", splitted[0]), &parent_key)
+    let parent_key = if splitted_names.len() == 2 {
+        find_name_key(splitted_names[1], &ROOT_DOMAIN_ACCOUNT)
     } else {
-        let parent_key = find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT);
-        find_name_key(&"\0url", &parent_key)
+        ROOT_DOMAIN_ACCOUNT
     };
+    let domain_key = find_name_key(splitted_names[0], &parent_key);
 
-    let mut result = rpc_request(&record_key).await?;
+    let mut result = match record {
+        None => {
+            // No record specified, default to URL then IPFS, do it in parallel
+            let url_record = find_name_key("\\1URL", &domain_key);
+            let ipfs_record = find_name_key("\\1IPFS", &domain_key);
+            let res_tuple = join!(fetch_record(&url_record), fetch_record(&ipfs_record));
+            let res = res_tuple.0.map_or(res_tuple.1, Ok);
+            res?
+        }
+        Some(r) => {
+            let record_key = find_name_key(&format!("\\1{}", r), &domain_key);
+            fetch_record(&record_key).await?
+        }
+    };
 
     if result.starts_with("ipfs://") {
         let cid = &result[7..];
@@ -32,7 +57,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
 }
 
-pub async fn rpc_request(record_key: &[u8; 32]) -> anyhow::Result<String> {
+pub async fn fetch_record(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let request_data = format!(
         "
     {{
