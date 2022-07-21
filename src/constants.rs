@@ -19,3 +19,7 @@ pub const URL_RECORD_NAME_HASHED: [u8; 32] = [
     88, 96, 166, 135, 118, 236, 203, 137, 158, 127, 28, 22, 133, 67, 93, 29, 194, 166, 137, 96, 68,
     56, 40, 62, 177, 97, 252, 247, 192, 110, 40, 168,
 ];
+
+pub const ERROR_URL: &str = "https://sol-domain.org";
+
+pub const HOME_MSG: &str = "Visit https://bonfida.org";
