@@ -28,9 +28,9 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .get_async("/:sns_name", |_, ctx| async move {
             match ctx.param("sns_name") {
                 Some(sns_name) => {
-                    let name_url = get_name_url(sns_name).await;
-                    let response = if let Ok(name_url) = name_url {
-                        Response::redirect(Url::parse(&name_url).unwrap())
+                    let url = get_name_url(sns_name).await;
+                    let response = if let Ok(url) = url {
+                        Response::redirect(url)
                     } else {
                         Response::redirect(Url::parse(constants::ERROR_URL).unwrap())
                     };

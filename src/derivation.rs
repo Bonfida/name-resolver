@@ -3,21 +3,23 @@ use {
     serde_json::Value,
     sha2::{Digest, Sha256},
     std::str::from_utf8,
+    worker::Url,
 };
 
 use crate::constants::{
     HASH_PREFIX, MAINNET_URL, NAME_RECORD_HEADER_LEN, ROOT_DOMAIN_ACCOUNT, SPL_NAME_SERVICE_ID,
-    URL_RECORD_NAME_HASHED,
 };
 
 /// Fetch and deseriealize the URL value stored in the SNS domain names data
-pub async fn get_name_url(sns_name: &str) -> anyhow::Result<String> {
-    let mut name_hasher = Sha256::new();
-    name_hasher.update(HASH_PREFIX.to_owned() + sns_name);
-    let hashed_name = name_hasher.finalize();
+pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
+    let splitted: Vec<&str> = sns_name.split(".").collect();
 
-    let name_account_key = find_name_key(&hashed_name, &ROOT_DOMAIN_ACCOUNT);
-    let url_name_record_key = find_name_key(&URL_RECORD_NAME_HASHED, &name_account_key);
+    let record_key = if splitted.len() == 2 {
+        let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
+        find_name_key(&format!("\0{}", &splitted[0]), &parent_key)
+    } else {
+        find_name_key(&splitted[0], &ROOT_DOMAIN_ACCOUNT)
+    };
 
     let request_data = format!(
         "
@@ -32,7 +34,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<String> {
           }}
         ]
       }}",
-        bs58::encode(url_name_record_key).into_string()
+        bs58::encode(record_key).into_string()
     );
 
     let request_json: Value = serde_json::from_str(&request_data)?;
@@ -56,15 +58,24 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<String> {
         .trim_end_matches('A');
     let decoded_url_bytes = &base64::decode(url_str)?;
 
-    let result = from_utf8(decoded_url_bytes)?.to_string();
+    let mut result = from_utf8(decoded_url_bytes)?.to_string();
 
-    Ok(result)
+    if result.starts_with("ipfs://") {
+        let cid = &result[7..];
+        result = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
+    }
+
+    Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
 }
 
-pub fn find_name_key(hashed_name: &[u8], parent_key: &[u8]) -> [u8; 32] {
+pub fn find_name_key(name: &str, parent_key: &[u8]) -> [u8; 32] {
+    let mut name_hasher = Sha256::new();
+    name_hasher.update(HASH_PREFIX.to_owned() + name);
+    let hashed_name = name_hasher.finalize();
+
     const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
 
-    let mut seeds_vec: Vec<&[u8]> = vec![hashed_name];
+    let mut seeds_vec: Vec<&[u8]> = vec![&hashed_name];
     let def = [0u8; 32];
     seeds_vec.push(&def);
     seeds_vec.push(parent_key);
