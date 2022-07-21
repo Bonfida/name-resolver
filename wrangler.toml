@@ -1,4 +1,4 @@
-name = "" # todo
+name = "sns-resolver"
 workers_dev = true
 
 main = "build/worker/shim.mjs"
