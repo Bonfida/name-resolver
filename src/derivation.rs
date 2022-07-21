@@ -18,7 +18,8 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
         let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
         find_name_key(&format!("\0{}", splitted[0]), &parent_key)
     } else {
-        find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT)
+        let parent_key = find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT);
+        find_name_key(&"\0url", &parent_key)
     };
 
     let mut result = rpc_request(&record_key).await?;
