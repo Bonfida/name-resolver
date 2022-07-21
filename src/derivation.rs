@@ -12,13 +12,13 @@ use crate::constants::{
 
 /// Fetch and deseriealize the URL value stored in the SNS domain names data
 pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
-    let splitted: Vec<&str> = sns_name.split(".").collect();
+    let splitted: Vec<&str> = sns_name.split('.').collect();
 
     let record_key = if splitted.len() == 2 {
-        let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
-        find_name_key(&format!("\0{}", &splitted[0]), &parent_key)
+        let parent_key = find_name_key(splitted[1], &ROOT_DOMAIN_ACCOUNT);
+        find_name_key(&format!("\0{}", splitted[0]), &parent_key)
     } else {
-        find_name_key(&splitted[0], &ROOT_DOMAIN_ACCOUNT)
+        find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT)
     };
 
     let request_data = format!(
