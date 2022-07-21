@@ -15,7 +15,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     let splitted: Vec<&str> = sns_name.split('.').collect();
 
     let record_key = if splitted.len() == 2 {
-        let parent_key = find_name_key(splitted[1], &ROOT_DOMAIN_ACCOUNT);
+        let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
         find_name_key(&format!("\0{}", splitted[0]), &parent_key)
     } else {
         find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT)
@@ -62,7 +62,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
 
     if result.starts_with("ipfs://") {
         let cid = &result[7..];
-        result = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
+        result = format!("https://ipfs.infura.io/ipfs/{}", cid);
     }
 
     Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
