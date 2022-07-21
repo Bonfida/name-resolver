@@ -37,14 +37,14 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     let mut result = match record {
         None => {
             // No record specified, default to URL then IPFS, do it in parallel
-            let url_record = find_name_key("\\1URL", &domain_key);
-            let ipfs_record = find_name_key("\\1IPFS", &domain_key);
+            let url_record = find_name_key("\x01url", &domain_key);
+            let ipfs_record = find_name_key("\x01IPFS", &domain_key);
             let res_tuple = join!(fetch_record(&url_record), fetch_record(&ipfs_record));
             let res = res_tuple.0.map_or(res_tuple.1, Ok);
             res?
         }
         Some(r) => {
-            let record_key = find_name_key(&format!("\\1{}", r), &domain_key);
+            let record_key = find_name_key(&format!("\x01{}", r), &domain_key);
             fetch_record(&record_key).await?
         }
     };
@@ -52,6 +52,11 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     if result.starts_with("ipfs://") {
         let cid = &result[7..];
         result = format!("https://ipfs.infura.io/ipfs/{}", cid);
+    }
+
+    if result.starts_with("arwv://") {
+        let arwv_hash = &result[10..];
+        result = format!("https://arweave.net/{}", arwv_hash);
     }
 
     Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
@@ -86,7 +91,6 @@ pub async fn fetch_record(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let a = res.text().await?;
 
     let json_return: Value = serde_json::from_str(&a)?;
-
     let url_str = &json_return["result"]["value"]["data"][0]
         .as_str()
         .ok_or_else(|| anyhow!("Error deserializing account data"))?[NAME_RECORD_HEADER_LEN..]
@@ -138,4 +142,34 @@ pub fn find_name_key(name: &str, parent_key: &[u8]) -> [u8; 32] {
         bump_seed[0] -= 1;
     }
     name_account_key
+}
+
+#[tokio::test]
+async fn test_resolve() {
+    const INPUT_OUTPUT: [(&str, &str); 2] = [
+        (
+            "boston",
+            "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
+        ),
+        (
+            "ARWV.boston",
+            "https://arweave.net/5jmew87_M2flH9f6ZpB9jlDv8hZSHPrmGUY8KqEk",
+        ),
+        // (
+        //     "sub.boston",
+        //     "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
+        // ),
+        // (
+        //     "ARWV.sub.boston",
+        //     "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
+        // ),
+    ];
+    // let name = "sub.boston";
+    // let res = get_name_url(name).await.unwrap();
+    // println!("{:?}", res.as_str());
+
+    for (input, output) in INPUT_OUTPUT {
+        let res = get_name_url(input).await.unwrap();
+        assert_eq!(res.as_str(), output);
+    }
 }
