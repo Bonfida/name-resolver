@@ -21,6 +21,17 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
         find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT)
     };
 
+    let mut result = rpc_request(&record_key).await?;
+
+    if result.starts_with("ipfs://") {
+        let cid = &result[7..];
+        result = format!("https://ipfs.infura.io/ipfs/{}", cid);
+    }
+
+    Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
+}
+
+pub async fn rpc_request(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let request_data = format!(
         "
     {{
@@ -56,16 +67,11 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
         .trim_start_matches('A')
         .trim_end_matches('=')
         .trim_end_matches('A');
-    let decoded_url_bytes = &base64::decode(url_str)?;
 
-    let mut result = from_utf8(decoded_url_bytes)?.to_string();
+    let decoded = base64::decode(url_str)?;
+    let result = from_utf8(&decoded)?.to_string();
 
-    if result.starts_with("ipfs://") {
-        let cid = &result[7..];
-        result = format!("https://ipfs.infura.io/ipfs/{}", cid);
-    }
-
-    Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
+    Ok(result)
 }
 
 pub fn find_name_key(name: &str, parent_key: &[u8]) -> [u8; 32] {
