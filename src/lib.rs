@@ -24,7 +24,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     let router = Router::new();
 
     router
-        .get("/", |_, _| Response::ok("Visit https://bonfida.org"))
+        .get("/", |_, _| Response::ok(constants::HOME_MSG))
         .get_async("/:sns_name", |_, ctx| async move {
             match ctx.param("sns_name") {
                 Some(sns_name) => {
@@ -32,11 +32,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                     let response = if let Ok(name_url) = name_url {
                         Response::redirect(Url::parse(&name_url).unwrap())
                     } else {
-                        Response::error("Invalid domain record", 400)
+                        Response::redirect(Url::parse(constants::ERROR_URL).unwrap())
                     };
                     return response;
                 }
-                None => return Response::error("Bad Request", 400),
+                None => return Response::redirect(Url::parse(constants::ERROR_URL).unwrap()),
             };
         })
         .run(req, env)
