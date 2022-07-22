@@ -6,33 +6,68 @@ use {
     worker::Url,
 };
 
+use futures::join;
+
 use crate::constants::{
-    HASH_PREFIX, MAINNET_URL, NAME_RECORD_HEADER_LEN, ROOT_DOMAIN_ACCOUNT, SPL_NAME_SERVICE_ID,
+    HASH_PREFIX, MAINNET_URL, NAME_RECORD_HEADER_LEN, RECORDS, RECORDS_LOWER_CASE,
+    ROOT_DOMAIN_ACCOUNT, SPL_NAME_SERVICE_ID,
 };
 
 /// Fetch and deseriealize the URL value stored in the SNS domain names data
 pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
-    let splitted: Vec<&str> = sns_name.split('.').collect();
+    let mut splitted_names: Vec<&str> = sns_name.split('.').collect();
+    let mut first_name = splitted_names[0].to_owned();
 
-    let record_key = if splitted.len() == 2 {
-        let parent_key = find_name_key(&splitted[1], &ROOT_DOMAIN_ACCOUNT);
-        find_name_key(&format!("\0{}", splitted[0]), &parent_key)
+    first_name.make_ascii_lowercase();
+
+    // If a record was specified, get its correct name and strip it from the input
+    let record = RECORDS_LOWER_CASE
+        .iter()
+        .position(|rec| rec == &first_name)
+        .map(|idx| {
+            splitted_names.remove(0);
+            RECORDS[idx]
+        });
+
+    let parent_key = if splitted_names.len() == 2 {
+        find_name_key(splitted_names[1], &ROOT_DOMAIN_ACCOUNT)
     } else {
-        let parent_key = find_name_key(splitted[0], &ROOT_DOMAIN_ACCOUNT);
-        find_name_key(&"\0url", &parent_key)
+        ROOT_DOMAIN_ACCOUNT
     };
 
-    let mut result = rpc_request(&record_key).await?;
+    let prefix = if splitted_names.len() == 2 { "\0" } else { "" };
+
+    let domain_key = find_name_key(&format!("{}{}", prefix, splitted_names[0]), &parent_key);
+
+    let mut result = match record {
+        None => {
+            // No record specified, default to URL then IPFS, do it in parallel
+            let url_record = find_name_key("\x01url", &domain_key);
+            let ipfs_record = find_name_key("\x01IPFS", &domain_key);
+            let res_tuple = join!(fetch_record(&url_record), fetch_record(&ipfs_record));
+            let res = res_tuple.0.map_or(res_tuple.1, Ok);
+            res?
+        }
+        Some(r) => {
+            let record_key = find_name_key(&format!("\x01{}", r), &domain_key);
+            fetch_record(&record_key).await?
+        }
+    };
 
     if result.starts_with("ipfs://") {
         let cid = &result[7..];
         result = format!("https://ipfs.infura.io/ipfs/{}", cid);
     }
 
+    if result.starts_with("arwv://") {
+        let arwv_hash = &result[7..];
+        result = format!("https://arweave.net/{}", arwv_hash);
+    }
+
     Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
 }
 
-pub async fn rpc_request(record_key: &[u8; 32]) -> anyhow::Result<String> {
+pub async fn fetch_record(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let request_data = format!(
         "
     {{
@@ -61,7 +96,6 @@ pub async fn rpc_request(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let a = res.text().await?;
 
     let json_return: Value = serde_json::from_str(&a)?;
-
     let url_str = &json_return["result"]["value"]["data"][0]
         .as_str()
         .ok_or_else(|| anyhow!("Error deserializing account data"))?[NAME_RECORD_HEADER_LEN..]
@@ -113,4 +147,34 @@ pub fn find_name_key(name: &str, parent_key: &[u8]) -> [u8; 32] {
         bump_seed[0] -= 1;
     }
     name_account_key
+}
+
+#[tokio::test]
+async fn test_resolve() {
+    const INPUT_OUTPUT: [(&str, &str); 4] = [
+        (
+            "boston",
+            "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
+        ),
+        (
+            "ARWV.boston",
+            "https://arweave.net/KuB5jmew87_M2flH9f6ZpB9jlDv8hZSHPrmGUY8KqEk",
+        ),
+        (
+            "sub.boston",
+            "https://ipfs.infura.io/ipfs/QmeHUsLEdoEzTVuRxHcYxx6mXDqs9RhEawCS3a3AQTFFeM",
+        ),
+        (
+            "ARWV.sub.boston",
+            "https://arweave.net/VE2zcstYZ9ptHWQcQBrb4gOe6j162c7NdO8xy4OcWiE",
+        ),
+    ];
+    // let name = "sub.boston";
+    // let res = get_name_url(name).await.unwrap();
+    // println!("{:?}", res.as_str());
+
+    for (input, output) in INPUT_OUTPUT {
+        let res = get_name_url(input).await.unwrap();
+        assert_eq!(res.as_str(), output);
+    }
 }
