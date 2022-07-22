@@ -22,7 +22,11 @@
 <h2 align="center">Introduction</h2>
 <br />
 
-This repository is an implementation of a Solana Name Service resolver made with Cloudflare workers. It allows people to browse websites with SNS record to be browsable from any web browser e.g `https://<domain_name>.your_deployment_url.com`. This code is deployed on `https://sol-domain.org` e.g [https://bonfida.sol-domain.org](https://bonfida.sol-domain.org)
+![diagram](/assets/diagram.png)
+
+This repository is an implementation of a Solana Name Service resolver made with Cloudflare workers.
+
+It allows people to browse SNS websites directly from their favorite web browser (e.g [https://bonfida.sol-domain.org](https://bonfida.sol-domain.org)). The resolver supports URLs, [IPFS CIDs](https://www.ipfs.com/) and [Arweave hashes](https://www.arweave.org/).
 
 When resolving a domain the worker will look into the following records and return the first one that exists:
 
@@ -30,10 +34,15 @@ When resolving a domain the worker will look into the following records and retu
 - `IPFS` record
 - `ARWV` record
 
-The resolver supports sub-domains with the prioritization rule.
+The resolver supports sub-domains with the same prioritization rule.
 
 <br />
-<a name="introduction"></a>
+<h2 align="center">Deployment</h2>
+<br />
+
+This resolver is deployed on [https://sol-domain.org](https://sol-domain.org)
+
+<br />
 <h2 align="center">Get started</h2>
 <br />
 
@@ -54,3 +63,18 @@ wrangler dev
 ```
 wrangler publish
 ```
+
+<br />
+<h2 align="center">Edit your records</h2>
+<br />
+
+To make your domain browsable, you must set your records:
+
+- Go to your domain's page (e.g [https://naming.bonfida.org/domain/bonfida](https://naming.bonfida.org/domain/bonfida))
+- Connect your wallet
+- In order to resolve your domain one of the following record must be set:
+  - `IPFS`: With the following format `ipfs://<CID>` (e.g `ipfs://QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ`)
+  - `ARWV`: With the following format `arwv://<HASH>` (e.g `arwv://KuB5jmew87_M2flH9f6ZpB9jlDv8hZSHPrmGUY8KqEk`)
+  - `url`: With the following format `url_to_your_website` (e.g `https://bonfida.org`)
+
+![record](/assets/record.png)
