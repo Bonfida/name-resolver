@@ -17,7 +17,9 @@ use crate::constants::{
 pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     let mut splitted_names: Vec<&str> = sns_name.split('.').collect();
     let mut first_name = splitted_names[0].to_owned();
+
     first_name.make_ascii_lowercase();
+
     // If a record was specified, get its correct name and strip it from the input
     let record = RECORDS_LOWER_CASE
         .iter()
@@ -32,7 +34,10 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     } else {
         ROOT_DOMAIN_ACCOUNT
     };
-    let domain_key = find_name_key(splitted_names[0], &parent_key);
+
+    let prefix = if splitted_names.len() == 2 { "\0" } else { "" };
+
+    let domain_key = find_name_key(&format!("{}{}", prefix, splitted_names[0]), &parent_key);
 
     let mut result = match record {
         None => {
@@ -55,7 +60,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
     }
 
     if result.starts_with("arwv://") {
-        let arwv_hash = &result[10..];
+        let arwv_hash = &result[7..];
         result = format!("https://arweave.net/{}", arwv_hash);
     }
 
@@ -146,23 +151,23 @@ pub fn find_name_key(name: &str, parent_key: &[u8]) -> [u8; 32] {
 
 #[tokio::test]
 async fn test_resolve() {
-    const INPUT_OUTPUT: [(&str, &str); 2] = [
+    const INPUT_OUTPUT: [(&str, &str); 4] = [
         (
             "boston",
             "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
         ),
         (
             "ARWV.boston",
-            "https://arweave.net/5jmew87_M2flH9f6ZpB9jlDv8hZSHPrmGUY8KqEk",
+            "https://arweave.net/KuB5jmew87_M2flH9f6ZpB9jlDv8hZSHPrmGUY8KqEk",
         ),
-        // (
-        //     "sub.boston",
-        //     "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
-        // ),
-        // (
-        //     "ARWV.sub.boston",
-        //     "https://ipfs.infura.io/ipfs/QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ",
-        // ),
+        (
+            "sub.boston",
+            "https://ipfs.infura.io/ipfs/QmeHUsLEdoEzTVuRxHcYxx6mXDqs9RhEawCS3a3AQTFFeM",
+        ),
+        (
+            "ARWV.sub.boston",
+            "https://arweave.net/VE2zcstYZ9ptHWQcQBrb4gOe6j162c7NdO8xy4OcWiE",
+        ),
     ];
     // let name = "sub.boston";
     // let res = get_name_url(name).await.unwrap();
