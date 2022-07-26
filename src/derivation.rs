@@ -64,6 +64,11 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
         result = format!("https://arweave.net/{}", arwv_hash);
     }
 
+    if result.starts_with("shdw://") {
+        let shdw_address = &result[7..];
+        result = format!("https://shdw-drive.genesysgo.net/{}", shdw_address);
+    }
+
     Url::parse(&result).map_err(|_| anyhow!("Error parsing URL"))
 }
 
