@@ -41,11 +41,25 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
 
     let mut result = match record {
         None => {
-            // No record specified, default to URL then IPFS, do it in parallel
+            // No record specified, default to URL, IPFS, ARWV then SHDW do it in parallel
             let url_record = find_name_key("\x01url", &domain_key);
             let ipfs_record = find_name_key("\x01IPFS", &domain_key);
-            let res_tuple = join!(fetch_record(&url_record), fetch_record(&ipfs_record));
-            let res = res_tuple.0.map_or(res_tuple.1, Ok);
+            let arwv_record = find_name_key("\x01ARWV", &domain_key);
+            let shdw_record = find_name_key("\x01SHDW", &domain_key);
+            
+            let res_tuple = join!(
+                fetch_record(&url_record),
+                fetch_record(&ipfs_record),
+                fetch_record(&arwv_record),
+                fetch_record(&shdw_record)
+            );
+
+            let res = res_tuple
+                .0
+                .map_or(res_tuple.1, Ok)
+                .map_or(res_tuple.2, Ok)
+                .map_or(res_tuple.3, Ok);
+
             res?
         }
         Some(r) => {
