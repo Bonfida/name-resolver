@@ -2,7 +2,9 @@ mod constants;
 mod derivation;
 mod utils;
 
-use {derivation::get_name_url, worker::*};
+pub use derivation::get_name_url;
+
+use worker::*;
 
 fn log_request(req: &Request) {
     console_log!(
