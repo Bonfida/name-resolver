@@ -6,6 +6,6 @@
     "dev": "wrangler dev src/lib.rs --local"
   },
   "devDependencies": {
-    "wrangler": "^2.0.22"
+    "wrangler": "latest"
   }
 }

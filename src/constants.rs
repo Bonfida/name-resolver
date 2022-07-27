@@ -18,12 +18,12 @@ pub const ERROR_URL: &str = "https://sol-domain.org";
 
 pub const HOME_MSG: &str = "Visit https://bonfida.org";
 
-pub const RECORDS_LOWER_CASE: [&str; 13] = [
+pub const RECORDS_LOWER_CASE: [&str; 14] = [
     "ipfs", "arwv", "eth", "btc", "ltc", "doge", "email", "url", "discord", "github", "reddit",
-    "twitter", "telegram",
+    "twitter", "telegram", "shdw",
 ];
 
-pub const RECORDS: [&str; 13] = [
+pub const RECORDS: [&str; 14] = [
     "IPFS", "ARWV", "ETH", "BTC", "LTC", "DOGE", "email", "url", "discord", "github", "reddit",
-    "twitter", "telegram",
+    "twitter", "telegram", "SHDW",
 ];
