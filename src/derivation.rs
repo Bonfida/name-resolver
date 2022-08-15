@@ -70,7 +70,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
 
     if result.starts_with("ipfs://") {
         let cid = &result[7..];
-        result = format!("https://ipfs.infura.io/ipfs/{}", cid);
+        result = format!("https://cloudflare-ipfs.com/ipfs/{}", cid);
     }
 
     if result.starts_with("arwv://") {
