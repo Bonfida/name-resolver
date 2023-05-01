@@ -46,7 +46,7 @@ pub async fn get_name_url(sns_name: &str) -> anyhow::Result<Url> {
             let ipfs_record = find_name_key("\x01IPFS", &domain_key);
             let arwv_record = find_name_key("\x01ARWV", &domain_key);
             let shdw_record = find_name_key("\x01SHDW", &domain_key);
-            
+
             let res_tuple = join!(
                 fetch_record(&url_record),
                 fetch_record(&ipfs_record),
@@ -115,14 +115,11 @@ pub async fn fetch_record(record_key: &[u8; 32]) -> anyhow::Result<String> {
     let a = res.text().await?;
 
     let json_return: Value = serde_json::from_str(&a)?;
-    let url_str = &json_return["result"]["value"]["data"][0]
+    let url_str = json_return["result"]["value"]["data"][0]
         .as_str()
-        .ok_or_else(|| anyhow!("Error deserializing account data"))?[NAME_RECORD_HEADER_LEN..]
-        .trim_start_matches('A')
-        .trim_end_matches('=')
-        .trim_end_matches('A');
+        .ok_or_else(|| anyhow!("Error deserializing account data"))?;
 
-    let decoded = base64::decode(url_str)?;
+    let decoded = base64::decode(url_str)?[NAME_RECORD_HEADER_LEN..].to_vec();
     let result = from_utf8(&decoded)?.to_string();
 
     Ok(result)
