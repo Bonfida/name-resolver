@@ -70,7 +70,7 @@ wrangler publish
 
 To make your domain browsable, you must set your records:
 
-- Go to your domain's page (e.g [https://naming.bonfida.org/domain/bonfida](https://naming.bonfida.org/domain/bonfida))
+- Go to your domain's page (e.g [https://sns.id/domain/bonfida](https://sns.id/domain/bonfida))
 - Connect your wallet
 - In order to resolve your domain one of the following record must be set:
   - `IPFS`: With the following format `ipfs://<CID>` (e.g `ipfs://QmZk9uh2mqmXJFKu2Hq7kFRh93pA8GDpSZ6ReNqubfRKKQ`)

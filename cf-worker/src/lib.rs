@@ -2,7 +2,7 @@ mod constants;
 mod derivation;
 mod utils;
 
-pub use derivation::get_name_url;
+pub use derivation::resolve_domain;
 
 use worker::*;
 
@@ -31,10 +31,8 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let error_response = Response::redirect(Url::parse(constants::ERROR_URL).unwrap());
             match ctx.param("sns_name") {
                 Some(sns_name) => {
-                    let url = get_name_url(sns_name).await;
-
-                    if let Ok(url) = url {
-                        Response::redirect(url)
+                    if let Ok(response) = resolve_domain(sns_name).await {
+                        Ok(response)
                     } else {
                         error_response
                     }

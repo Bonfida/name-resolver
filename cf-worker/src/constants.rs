@@ -1,6 +1,6 @@
 pub const NAME_RECORD_HEADER_LEN: usize = 96;
 
-pub const MAINNET_URL: &str = "https://bonfida.genesysgo.net";
+pub const MAINNET_URL: &str = "https://rpc-public.hellomoon.io";
 
 pub const HASH_PREFIX: &str = "SPL Name Service";
 
@@ -18,12 +18,14 @@ pub const ERROR_URL: &str = "https://sol-domain.org";
 
 pub const HOME_MSG: &str = "Visit https://bonfida.org";
 
-pub const RECORDS_LOWER_CASE: [&str; 14] = [
+pub const RECORDS_LOWER_CASE: [&str; 16] = [
     "ipfs", "arwv", "eth", "btc", "ltc", "doge", "email", "url", "discord", "github", "reddit",
-    "twitter", "telegram", "shdw",
+    "twitter", "telegram", "shdw", "a", "CNAME",
 ];
 
-pub const RECORDS: [&str; 14] = [
+pub const RECORDS: [&str; 16] = [
     "IPFS", "ARWV", "ETH", "BTC", "LTC", "DOGE", "email", "url", "discord", "github", "reddit",
-    "twitter", "telegram", "SHDW",
+    "twitter", "telegram", "SHDW", "A", "CNAME",
 ];
+
+pub const STATUS_CODE_MOVED_PERMANENTLY: u16 = 301;

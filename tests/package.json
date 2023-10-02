@@ -1,0 +1,17 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "author": "DR497",
+  "license": "ISC",
+  "dependencies": {
+    "vitest": "^0.34.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}
