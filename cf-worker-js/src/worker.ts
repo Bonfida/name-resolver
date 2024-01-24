@@ -3,6 +3,7 @@ import { logger } from "hono/logger";
 import {
   deserializeRecord,
   deserializeRecordV2Content,
+  getDomainKeySync,
   getRecordKeySync,
   getRecordV2Key,
   NameRegistryState,
@@ -55,6 +56,12 @@ app.get("/:domain", async (c) => {
     const recordKeys = RECORDS.map((e) => getRecordKeySync(domain, e));
     const recordV2Keys = RECORDS.map((e) => getRecordV2Key(domain, e));
 
+    const { registry, nftOwner } = await NameRegistryState.retrieve(
+      connection,
+      getDomainKeySync(domain).pubkey
+    );
+    const owner = nftOwner || registry.owner;
+
     const infos = await connection.getMultipleAccountsInfo([
       ...recordV2Keys,
       ...recordKeys,
@@ -74,7 +81,12 @@ app.get("/:domain", async (c) => {
         } else {
           // Record V2
           const record = SnsRecord.deserialize(e.data);
-          return deserializeRecordV2Content(record.getContent(), RECORDS[idx]);
+          if (record.getStalenessId().equals(owner.toBuffer())) {
+            return deserializeRecordV2Content(
+              record.getContent(),
+              RECORDS[idx]
+            );
+          }
         }
       } catch (err) {
         console.error(err);
