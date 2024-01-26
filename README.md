@@ -33,8 +33,11 @@ When resolving a domain the worker will look into the following records and retu
 - `url` record
 - `IPFS` record
 - `ARWV` record
+- `SHDW` record
+- `A` record
+- `CNAME` record
 
-The resolver supports sub-domains with the same prioritization rule.
+The resolver will resolve both records v1 and records v2, but records v2 are given priority.
 
 <br />
 <h2 align="center">Deployment</h2>
