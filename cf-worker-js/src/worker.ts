@@ -12,6 +12,8 @@ import {
 import { Connection } from "@solana/web3.js";
 import { Record as SnsRecord } from "@bonfida/sns-records";
 
+const TEMP_REDIRECT_STATUS = 307;
+
 const RECORDS = [
   Record.Url,
   Record.IPFS,
@@ -96,16 +98,16 @@ app.get("/:domain", async (c) => {
     const index = des.findIndex((e) => e !== undefined);
 
     if (index === -1) {
-      return c.redirect(ERROR_URL, 301);
+      return c.redirect(ERROR_URL, TEMP_REDIRECT_STATUS);
     }
 
     const result = des[index]!;
     const record = RECORDS[index % RECORDS.length];
 
-    return c.redirect(formatResponse(result, record), 301);
+    return c.redirect(formatResponse(result, record), TEMP_REDIRECT_STATUS);
   } catch (err) {
     console.error(err);
-    return c.redirect(ERROR_URL, 301);
+    return c.redirect(ERROR_URL, TEMP_REDIRECT_STATUS);
   }
 });
 
