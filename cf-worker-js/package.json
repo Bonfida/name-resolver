@@ -1,0 +1,20 @@
+{
+  "name": "sns-resolver",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler publish",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230419.0",
+    "typescript": "^5.0.4",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@bonfida/sns-records": "^0.0.1",
+    "@bonfida/spl-name-service": "^2.3.3",
+    "@solana/web3.js": "^1.89.1",
+    "hono": "^3.12.6"
+  }
+}

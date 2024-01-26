@@ -2,3 +2,5 @@
 target
 node_modules/
 .DS_Store
+.dev.vars
+.wrangler
