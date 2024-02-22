@@ -10,7 +10,7 @@ import {
   Record,
 } from "@bonfida/spl-name-service";
 import { Connection } from "@solana/web3.js";
-import { Record as SnsRecord } from "@bonfida/sns-records";
+import { Record as SnsRecord, Validation } from "@bonfida/sns-records";
 
 const TEMP_REDIRECT_STATUS = 307;
 
@@ -83,7 +83,10 @@ app.get("/:domain", async (c) => {
         } else {
           // Record V2
           const record = SnsRecord.deserialize(e.data);
-          if (record.getStalenessId().equals(owner.toBuffer())) {
+          if (
+            record.getStalenessId().equals(owner.toBuffer()) &&
+            record.header.stalenessValidation === Validation.Solana
+          ) {
             return deserializeRecordV2Content(
               record.getContent(),
               RECORDS[idx]
